@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>YourReview — Retro Cast Archive</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Space Grotesk"', 'sans-serif'],
+            display: ['Orbitron', 'sans-serif']
+          },
+          colors: {
+            brand: {
+              bg: '#0a0613',
+              card: '#160f24',
+              card2: '#20152f',
+              line: '#33254a',
+              accent: '#ff2f6e',
+              accent2: '#23e5ff',
+              accent3: '#ffcf4d',
+              lightBg: '#f1e6d2',
+              lightCard: '#fffaf0',
+              lightCard2: '#f4e9d3',
+              lightLine: '#d9c6a0'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;900&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    html.dark body { position: relative; }
+    html.dark body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 60;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.035) 0px,
+        rgba(255,255,255,0.035) 1px,
+        transparent 1px,
+        transparent 3px
+      );
+      mix-blend-mode: overlay;
+      opacity: .45;
+    }
+
+    .retro-grid {
+      background-image:
+        linear-gradient(rgba(35,229,255,.18) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(35,229,255,.18) 1px, transparent 1px);
+      background-size: 42px 42px;
+    }
+    html:not(.dark) .retro-grid {
+      background-image:
+        linear-gradient(rgba(180,83,9,.12) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(180,83,9,.12) 1px, transparent 1px);
+      background-size: 42px 42px;
+    }
+
+    button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, i.star-icon:focus-visible {
+      outline: 2px solid #23e5ff;
+      outline-offset: 2px;
+    }
+
+    .star-icon { transition: transform .12s ease; }
+    .star-icon:hover { transform: scale(1.15); }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body class="bg-brand-lightBg text-gray-800 dark:bg-brand-bg dark:text-gray-200 min-h-screen flex flex-col font-sans transition-colors duration-300">
+
+  <!-- ================= HEADER & NAVIGASI ================= -->
+  <header class="sticky top-0 z-40 bg-brand-lightCard/90 dark:bg-brand-bg/90 backdrop-blur-md border-b border-brand-lightLine dark:border-brand-line px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <h1 class="font-display text-lg font-bold text-brand-accent cursor-pointer tracking-wide" onclick="navigateTo('home')">YourReview</h1>
+      <span id="connStatus" class="text-[10px] px-2 py-0.5 rounded-full border border-brand-line text-gray-500 hidden sm:inline-block">⚪ Mode Lokal</span>
+      <nav class="hidden md:flex gap-4 text-sm font-medium ml-3">
+        <button onclick="navigateTo('home')" class="hover:text-brand-accent transition">Home</button>
+        <button onclick="navigateTo('my-reviews')" class="hover:text-brand-accent transition">My Reviews</button>
+      </nav>
+    </div>
+
+    <div class="flex-1 max-w-md mx-4">
+      <div class="relative">
+        <input type="text" id="searchInput" readonly onclick="openSearchOverlay()" placeholder="Lagi nyari tontonan apa?" class="w-full bg-brand-lightCard2 dark:bg-brand-card text-sm text-gray-800 dark:text-white rounded-md py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-brand-accent2 border border-brand-lightLine dark:border-brand-line cursor-pointer">
+        <i class="ri-search-line absolute left-3 top-2.5 text-gray-500 dark:text-gray-400"></i>
+      </div>
+    </div>
+
+    <div id="navAuthArea" class="flex items-center"></div>
+  </header>
+
+  <!-- ================= OVERLAY PENCARIAN (full-screen, ala YouTube) ================= -->
+  <div id="searchOverlay" class="fixed inset-0 z-[70] hidden flex-col bg-black/60 backdrop-blur-md">
+    <div class="bg-brand-lightCard dark:bg-brand-bg/95 border-b border-brand-lightLine dark:border-brand-line px-3 py-3 flex items-center gap-2">
+      <button onclick="closeSearchOverlay()" class="text-xl text-gray-600 dark:text-gray-300 p-1" aria-label="Tutup pencarian">
+        <i class="ri-arrow-left-line"></i>
+      </button>
+      <div class="relative flex-1">
+        <input type="text" id="searchOverlayInput" oninput="handleSearchOverlay(this.value)" placeholder="Lagi nyari tontonan apa?" class="w-full bg-brand-lightCard2 dark:bg-brand-card text-sm text-gray-800 dark:text-white rounded-md py-2.5 pl-10 pr-9 focus:outline-none focus:ring-2 focus:ring-brand-accent2 border border-brand-lightLine dark:border-brand-line">
+        <i class="ri-search-line absolute left-3 top-3 text-gray-500 dark:text-gray-400"></i>
+        <button onclick="clearSearchOverlay()" class="absolute right-2 top-2 text-lg text-gray-400 hover:text-brand-accent">
+          <i class="ri-close-circle-fill"></i>
+        </button>
+      </div>
+    </div>
+    <div id="searchOverlayResults" class="flex-1 overflow-y-auto p-4 bg-brand-lightBg/95 dark:bg-brand-bg/95">
+      <p class="text-gray-500 text-sm italic">Ketik judul karyanya di atas ya!</p>
+    </div>
+  </div>
+
+  <!-- ================= HALAMAN UTAMA (HOME) ================= -->
+  <main id="page-home" class="page flex-1 pb-24">
+    <div id="heroSection" class="relative w-full h-[60vh] bg-cover bg-center flex items-end overflow-hidden" style="background-image: linear-gradient(to top, rgba(10,6,19,1) 10%, rgba(10,6,19,0.3) 50%, rgba(10,6,19,0.8) 100%), url('https://via.placeholder.com/1200x600?text=Hero+Poster+Kosong');">
+      <div class="retro-grid absolute inset-0 opacity-60 pointer-events-none"></div>
+      <div class="relative p-6 md:p-12 max-w-3xl">
+        <span id="heroBadge" class="bg-brand-accent text-white text-xs font-bold px-2.5 py-1 rounded uppercase tracking-wider">Karya Terbaru</span>
+        <h2 id="heroTitle" class="font-display text-3xl md:text-5xl font-extrabold mt-3 text-white">Sepi Banget Nih...</h2>
+        <p id="heroDesc" class="text-sm text-gray-300 mt-2 line-clamp-3">Belum ada karya sama sekali. Gas jadi yang pertama nambahin lewat tombol (+) di pojok!</p>
+        <button id="heroBtn" onclick="alert('Belum ada karya yang bisa dilihat, gengs!')" class="mt-4 bg-brand-accent hover:bg-pink-700 text-white font-bold py-2 px-6 rounded-lg flex items-center gap-2 transition shadow-[0_0_18px_rgba(255,47,110,0.5)]">
+          <i class="ri-play-fill"></i> Cek Detailnya
+        </button>
+      </div>
+    </div>
+
+    <section class="px-6 mt-8">
+      <div class="flex items-center justify-between flex-wrap gap-2 mb-1">
+        <h3 class="font-display text-lg font-bold flex items-center gap-2">
+          <i class="ri-fire-line text-brand-accent"></i> Top 10 Bulan Ini
+        </h3>
+        <span id="monthPeriodInfo" class="text-[11px] text-gray-500 dark:text-gray-500"></span>
+      </div>
+      <p id="monthLockBanner" class="hidden text-xs text-brand-accent2 bg-cyan-950/40 border border-brand-accent2/40 rounded px-3 py-2 mb-3"></p>
+      <div id="top10List" class="flex gap-4 overflow-x-auto no-scrollbar py-4 px-2">
+        <p class="text-gray-500 text-sm italic">Masih kosong melompong, gas isi dong!</p>
+      </div>
+    </section>
+
+    <section class="px-6 mt-6">
+      <div class="flex items-center justify-between flex-wrap gap-2 mb-1">
+        <h3 class="font-display text-lg font-bold flex items-center gap-2">
+          <i class="ri-trophy-line text-brand-accent3"></i> Top 10 Tahun Ini
+        </h3>
+        <span id="yearPeriodInfo" class="text-[11px] text-gray-500 dark:text-gray-500"></span>
+      </div>
+      <p id="yearLockBanner" class="hidden text-xs text-brand-accent2 bg-cyan-950/40 border border-brand-accent2/40 rounded px-3 py-2 mb-3"></p>
+      <div id="top10YearList" class="flex gap-4 overflow-x-auto no-scrollbar py-4 px-2">
+        <p class="text-gray-500 text-sm italic">Masih kosong melompong, gas isi dong!</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= HALAMAN MY REVIEWS ================= -->
+  <main id="page-my-reviews" class="page flex-1 p-6 hidden">
+    <h2 class="font-display text-xl font-bold mb-6">Review Gue</h2>
+    <div id="myReviewsList" class="space-y-4">
+      <div class="bg-brand-lightCard dark:bg-brand-card/50 rounded-lg p-8 text-center border border-brand-lightLine dark:border-brand-line">
+        <i class="ri-edit-box-line text-4xl text-gray-400 dark:text-gray-500 mb-2 block"></i>
+        <p class="text-lg font-medium text-gray-500 dark:text-gray-400">Belum nulis review sama sekali, gas mulai!</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- ================= HALAMAN LOGIN ================= -->
+  <main id="page-login" class="page flex-1 p-6 max-w-md mx-auto flex flex-col justify-between hidden">
+    <div class="bg-brand-lightCard dark:bg-brand-card p-6 rounded-xl border border-brand-lightLine dark:border-brand-line mt-8">
+      <h2 class="font-display text-xl font-bold mb-6 text-center">Gas Login Dulu</h2>
+      <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-1 text-gray-500 dark:text-gray-400">Nama Panggilan</label>
+          <input type="text" id="loginName" required class="w-full bg-brand-lightCard2 dark:bg-brand-card2 border border-brand-lightLine dark:border-brand-line rounded p-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-brand-accent">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-1 text-gray-500 dark:text-gray-400">Genre Favorit</label>
+          <select id="loginGenre" class="w-full bg-brand-lightCard2 dark:bg-brand-card2 border border-brand-lightLine dark:border-brand-line rounded p-2.5 text-sm">
+            <option value="Action">Action</option>
+            <option value="Romance">Romance</option>
+            <option value="Horror">Horror</option>
+            <option value="Sci-Fi">Sci-Fi</option>
+            <option value="Slice of Life">Slice of Life</option>
+            <option value="Lainnya">Lainnya</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-1 text-gray-500 dark:text-gray-400">Jenis Karya Favorit</label>
+          <select id="loginType" class="w-full bg-brand-lightCard2 dark:bg-brand-card2 border border-brand-lightLine dark:border-brand-line rounded p-2.5 text-sm">
+            <option value="Movie">Movie</option>
+            <option value="Series">Series</option>
+            <option value="Sinetron">Sinetron</option>
+            <option value="Anime">Anime</option>
+            <option value="Donghua">Donghua</option>
+            <option value="Drama">Drama (K/C/J-Drama)</option>
+            <option value="Cartoon">Cartoon</option>
+            <option value="Live Action">Live Action</option>
+            <option value="Lainnya">Lainnya</option>
+          </select>
+        </div>
+        <button type="submit" class="w-full bg-brand-accent hover:bg-pink-700 font-bold py-2.5 rounded transition mt-4 text-white">Gas Masuk</button>
+      </form>
+    </div>
+
+    <div class="text-center mt-12 mb-4">
+      <button onclick="openDevModal()" class="text-xs text-gray-500 hover:text-brand-accent2 flex items-center justify-center gap-1 mx-auto transition">
+        <i class="ri-code-s-slash-line"></i> Masuk Mode Developer
+      </button>
+    </div>
+  </main>
+
+  <!-- ================= HALAMAN PENGATURAN ================= -->
+  <main id="page-settings" class="page flex-1 p-6 max-w-2xl mx-auto hidden">
+    <h2 class="font-display text-xl font-bold mb-6">Pengaturan</h2>
+
+    <div class="bg-brand-lightCard dark:bg-brand-card rounded-xl p-6 border border-brand-lightLine dark:border-brand-line space-y-6">
+      <div class="pb-4 border-b border-brand-lightLine dark:border-brand-line">
+        <h3 class="text-sm font-semibold uppercase text-gray-500 dark:text-gray-400 mb-2">Profil</h3>
+        <p class="text-lg font-bold" id="settingsProfileName">Nama Panggilan: -</p>
+        <button id="logoutBtn" onclick="handleLogout()" class="hidden mt-3 text-xs text-brand-accent hover:text-pink-700 font-semibold flex items-center gap-1">
+          <i class="ri-logout-box-line"></i> Logout, Bye!
+        </button>
+      </div>
+
+      <div class="pb-4 border-b border-brand-lightLine dark:border-brand-line">
+        <h3 class="text-sm font-semibold uppercase text-gray-500 dark:text-gray-400 mb-2">Tema Tampilan</h3>
+        <div class="flex gap-4">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="theme" value="dark" onclick="setTheme('dark')"> Gelap
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="theme" value="light" onclick="setTheme('light')"> Terang
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="theme" value="system" onclick="setTheme('system')" checked> Ikuti Sistem
+          </label>
+        </div>
+      </div>
+
+      <div id="devToolsPanel" class="hidden pb-4 border-b border-brand-lightLine dark:border-brand-line">
+        <h3 class="text-sm font-semibold uppercase text-brand-accent2 mb-2">Developer Tools</h3>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Simulasikan status kunci rating buat ngetes sistem ranking (data asli aman, gak kepengaruh).</p>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="setDevLockOverride(null)" class="text-xs px-3 py-1.5 rounded border border-brand-line bg-brand-card2 hover:border-brand-accent2">Otomatis (Normal)</button>
+          <button onclick="setDevLockOverride(true)" class="text-xs px-3 py-1.5 rounded border border-brand-line bg-brand-card2 hover:border-brand-accent2">Paksa Terkunci</button>
+          <button onclick="setDevLockOverride(false)" class="text-xs px-3 py-1.5 rounded border border-brand-line bg-brand-card2 hover:border-brand-accent2">Paksa Terbuka</button>
+        </div>
+        <button onclick="exitDevMode()" class="mt-3 text-xs text-brand-accent hover:text-pink-700 font-semibold flex items-center gap-1">
+          <i class="ri-shut-down-line"></i> Keluar Mode Developer
+        </button>
+      </div>
+
+      <div>
+        <h3 class="text-sm font-semibold uppercase text-gray-500 dark:text-gray-400 mb-2">Tentang / About</h3>
+        <p class="text-sm text-gray-600 dark:text-gray-300">Platform review tontonan kesayangan kamu — Retro Edition. Top 10 Bulanan & Tahunan update otomatis setiap awal periode baru.</p>
+        <p id="aboutConnInfo" class="text-xs text-gray-500 dark:text-gray-500 mt-2"></p>
+      </div>
+    </div>
+  </main>
+
+  <!-- ================= HALAMAN DETAIL REVIEW KARYA ================= -->
+  <main id="page-detail" class="page flex-1 p-6 max-w-4xl mx-auto hidden">
+    <button onclick="navigateTo('home')" class="mb-4 text-sm text-gray-500 dark:text-gray-400 hover:text-brand-accent flex items-center gap-1">
+      <i class="ri-arrow-left-line"></i> Balik
+    </button>
+
+    <div id="detailContent" class="space-y-6"></div>
+
+    <div class="mt-8 border-t border-brand-lightLine dark:border-brand-line pt-6">
+      <h3 class="font-display text-base font-bold mb-1">Tulis Review Kamu</h3>
+      <p id="ratingLockNote" class="hidden text-xs text-brand-accent2 bg-cyan-950/40 border border-brand-accent2/40 rounded px-3 py-2 mb-3">🔒 Rating lagi dikunci buat finalisasi ranking periode ini. Komentar & rekomendasi tetap gas terus!</p>
+      <form onsubmit="submitReview(event)" class="space-y-4">
+        <div id="userRatingWrap">
+          <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Kasih Rating (klik bintangnya)</label>
+          <div class="flex items-center gap-2">
+            <div id="userRatingStars" class="flex items-center"></div>
+            <span id="userRatingValueText" class="text-sm font-bold text-amber-600 dark:text-brand-accent3">0/5</span>
+          </div>
+          <p class="text-[11px] text-gray-500 dark:text-gray-500 mt-1">Klik sekali = setengah bintang, klik lagi = penuh ✨</p>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Rekomendasi Gak Nih?</label>
+          <select id="userRecommend" class="w-full bg-brand-lightCard2 dark:bg-brand-card2 border border-brand-lightLine dark:border-brand-line rounded p-2 text-sm">
+            <option value="Sangat Direkomendasikan">Wajib Nonton</option>
+            <option value="Biasa Saja">Biasa Aja</option>
+            <option value="Tidak Direkomendasikan">Skip Aja</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Spill Review Kamu</label>
+          <textarea id="userComment" rows="3" required class="w-full bg-brand-lightCard2 dark:bg-brand-card2 border border-brand-lightLine dark:border-brand-line rounded p-2 text-sm"></textarea>
+        </div>
+        <button type="submit" class="bg-brand-accent px-4 py-2 rounded text-sm font-bold text-white">Gas Kirim!</button>
+      </form>
+    </div>
+
+    <div class="mt-8">
+      <h3 class="font-display text-base font-bold mb-4">Kata Netizen</h3>
+      <div id="reviewsList" class="space-y-3"></div>
+    </div>
+  </main>
+
+  <!-- ================= HALAMAN TAMBAH KARYA (CREATE (+)) ================= -->
+  <main id="page-create" class="page flex-1 p-6 max-w-xl mx-auto hidden">
+    <h2 class="font-display text-xl font-bold mb-1">Tambah Karya Baru</h2>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Karyanya belum ada di list? Gas tambahin sendiri!</p>
+
+    <form onsubmit="handleCreateFirst(event)" class="space-y-4 bg-brand-lightCard dark:bg-brand-card p-6 rounded-xl border border-brand-lightLine dark:border-brand-line">
+      <div>
+        <label class="block text-xs font-semibold mb-1">Judul Karya</label>
+        <input type="text" id="createTitle" required class="w-full bg-brand-lightCard2 dark:bg-brand-card2 border border-brand-lightLine dark:border-brand-line rounded p-2 text-sm">
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold mb-1">Jenis Karya</label>
+        <select id="createType" onchange="updateTypeFields()" class="w-full bg-brand-lightCard2 dark:bg-brand-card2 border border-brand-lightLine dark:border-brand-line rounded p-2 text-sm">
+          <option value="Movie">Movie</option>
+          <option value="Series">Series</option>
+          <option value="Sinetron">Sinetron</option>
+          <option value="Anime">Anime</option>
+          <option value="Donghua">Donghua</option>
+          <option value="Drama">Drama</option>
+          <option value="Cartoon">Cartoon</option>
+          <option value="Live Action">Live Action</option>
+          <option value="Lainnya">Lainnya</option>
+        </select>
+      </div>
+
+      <div id="dramaSubWrap" class="hidden">
+        <label class="block text-xs font-semibold mb-1">Sub-Jenis Drama</label>
+        <select id="createDramaSub" class="w-full bg-brand-lightCard2 dark:bg-brand-card2 border border-brand-lightLine dark:border-brand-line rounded p-2 text-sm">
+          <option value="K-Drama">K-Drama</option>
+          <option value="C-Drama">C-Drama</option>
+          <option value="J-Drama">J-Drama</option>
+        </select>
+      </div>
+
+      <div id="customTypeWrap" class="hidden">
+        <label class="block text-xs font-semibold mb-1">Ketik Jenis Karyanya</label>
+        <input type="text" id="createCustomType" placeholder="cth: Podcast Review, Variety Show, dll" class="w-full bg-brand-lightCard2 dark:bg-brand-card2 border border-brand-lightLine dark:border-brand-line rounded p-2 text-sm">
+      </div>
+
+      <div id="episodeStatusWrap" class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold mb-1">Status</label>
+          <select id="createStatus" class="w-full bg-brand-lightCard2 dark:bg-brand-card2 border border-brand-lightLine dark:border-brand-line rounded p-2 text-sm">
+            <option value="On Going">Masih Tayang</option>
+            <option value="Complete">Udah Tamat</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold mb-1">Jumlah Episode</label>
+          <input type="text" id="createEpisodes" placeholder="cth: 12 Episode" class="w-full bg-brand-lightCard2 dark:bg-brand-card2 border border-brand-lightLine dark:border-brand-line rounded p-2 text-sm">
+        </div>
+      </div>
+
+      <div id="durationWrap" class="hidden">
+        <label class="block text-xs font-semibold mb-1">Durasi</label>
+        <input type="text" id="createDuration" placeholder="cth: 120 menit" class="w-full bg-brand-lightCard2 dark:bg-brand-card2 border border-brand-lightLine dark:border-brand-line rounded p-2 text-sm">
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold mb-1">Sinopsis</label>
+        <textarea id="createSynopsis" rows="3" required class="w-full bg-brand-lightCard2 dark:bg-brand-card2 border border-brand-lightLine dark:border-brand-line rounded p-2 text-sm"></textarea>
+      </div>
+
+      <div id="createRatingWrap">
+        <label class="block text-xs font-semibold mb-1">Rating Awal (klik bintangnya)</label>
+        <div class="flex items-center gap-2">
+          <div id="createRatingStars" class="flex items-center"></div>
+          <span id="createRatingValueText" class="text-sm font-bold text-amber-600 dark:text-brand-accent3">0/5</span>
+        </div>
+        <p class="text-[11px] text-gray-500 dark:text-gray-500 mt-1">Klik sekali = setengah bintang, klik lagi = penuh ✨</p>
+      </div>
+      <p id="createLockNote" class="hidden text-xs text-brand-accent2 bg-cyan-950/40 border border-brand-accent2/40 rounded px-3 py-2">🔒 Rating awal lagi dikunci buat finalisasi ranking periode ini. Karya tetap bisa ditambahin kok, cuma tanpa rating dulu.</p>
+
+      <div class="space-y-2">
+        <label class="block text-xs font-semibold mb-1">Poster Karya</label>
+
+        <div id="createPosterFileWrap">
+          <span class="text-[11px] text-gray-500 dark:text-gray-400 block mb-1">Option A: Upload Gambar dari Perangkat</span>
+          <input type="file" id="createPosterFile" accept="image/*" onchange="previewPosterFile(event)" class="w-full text-xs text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-brand-accent file:text-white hover:file:bg-pink-700 cursor-pointer bg-brand-lightCard2 dark:bg-brand-card2 p-1.5 rounded border border-brand-lightLine dark:border-brand-line">
+        </div>
+
+        <div id="createPosterOrDivider" class="text-center text-xs text-gray-500 my-1">- ATAU -</div>
+
+        <div>
+          <span class="text-[11px] text-gray-500 dark:text-gray-400 block mb-1">Option B: Tempel Link URL Poster (Gambar)</span>
+          <input type="url" id="createPosterUrl" placeholder="https://... (link gambar poster)" class="w-full bg-brand-lightCard2 dark:bg-brand-card2 border border-brand-lightLine dark:border-brand-line rounded p-2 text-sm">
+        </div>
+
+        <div id="posterPreviewContainer" class="hidden mt-2 flex items-center gap-3 bg-brand-lightCard2 dark:bg-brand-card2 p-2 rounded border border-brand-lightLine dark:border-brand-line">
+          <img id="posterPreviewImg" src="" class="w-12 h-16 object-cover rounded">
+          <span class="text-xs text-green-500 dark:text-green-400 font-medium"><i class="ri-checkbox-circle-fill"></i> Posternya siap gas!</span>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold mb-1">Link Trailer / Cuplikan Video</label>
+        <input type="url" id="createTrailerUrl" placeholder="https://youtube.com/... (link trailer atau klip pendek, opsional)" class="w-full bg-brand-lightCard2 dark:bg-brand-card2 border border-brand-lightLine dark:border-brand-line rounded p-2 text-sm">
+        <p class="text-[11px] text-gray-500 dark:text-gray-500 mt-1">Ini beda sama link poster ya — isi link video (YouTube, dll) biar orang lain bisa langsung nonton cuplikannya.</p>
+      </div>
+
+      <button type="submit" id="createSubmitBtn" class="w-full bg-brand-accent hover:bg-pink-700 font-bold py-2.5 rounded transition mt-4 text-white">Gas Posting!</button>
+    </form>
+  </main>
+
+  <!-- ================= FLOATING (+) BUTTON ================= -->
+  <button onclick="handleCreateNav()" title="Tambah Karya Baru" class="fixed bottom-6 right-6 w-14 h-14 bg-brand-accent text-white rounded-full flex items-center justify-center text-2xl shadow-[0_0_20px_rgba(255,47,110,0.6)] hover:scale-110 transition z-50">
+    <i class="ri-add-line"></i>
+  </button>
+
+  <!-- ================= MODAL DEVELOPER CODE ================= -->
+  <div id="devModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden p-4">
+    <div class="bg-brand-lightCard dark:bg-brand-card p-6 rounded-xl max-w-sm w-full border border-brand-lightLine dark:border-brand-line relative">
+      <button onclick="closeDevModal()" class="absolute top-3 right-3 text-gray-500 dark:text-gray-400 hover:text-brand-accent"><i class="ri-close-line"></i></button>
+      <h3 class="font-display text-base font-bold mb-2">Akses Developer Mode</h3>
+      <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">Masukin kode developer kamu (99 atau 20) ya.</p>
+      <input type="password" id="devCodeInput" placeholder="Kode Akses" class="w-full bg-brand-lightCard2 dark:bg-brand-card2 border border-brand-lightLine dark:border-brand-line rounded p-2.5 text-sm mb-4">
+      <button onclick="verifyDevCode()" class="w-full bg-brand-accent2 text-brand-bg hover:brightness-90 font-bold py-2 rounded text-sm">Gas Masuk</button>
+    </div>
+  </div>
+
+  <!-- ================= MODAL EDIT KARYA (DEVELOPER) ================= -->
+  <div id="editMovieModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden p-4 overflow-y-auto">
+    <div class="bg-brand-lightCard dark:bg-brand-card p-6 rounded-xl max-w-md w-full border border-brand-lightLine dark:border-brand-line relative my-8">
+      <button onclick="closeEditMovieModal()" class="absolute top-3 right-3 text-gray-500 dark:text-gray-400 hover:text-brand-accent"><i class="ri-close-line"></i></button>
+      <h3 class="font-display text-base font-bold mb-4 flex items-center gap-2"><i class="ri-edit-2-line text-brand-accent2"></i> Edit Karya (Developer)</h3>
+      <form onsubmit="submitEditMovie(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold mb-1">Judul Karya</label>
+          <input type="text" id="editTitle" required class="w-full bg-brand-lightCard2 dark:bg-brand-card2 border border-brand-lightLine dark:border-brand-line rounded p-2 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold mb-1">Sinopsis</label>
+          <textarea id="editSynopsis" rows="3" required class="w-full bg-brand-lightCard2 dark:bg-brand-card2 border border-brand-lightLine dark:border-brand-line rounded p-2 text-sm"></textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold mb-1">Link Trailer</label>
+          <input type="url" id="editTrailerUrl" placeholder="https://..." class="w-full bg-brand-lightCard2 dark:bg-brand-card2 border border-brand-lightLine dark:border-brand-line rounded p-2 text-sm">
+        </div>
+        <div class="space-y-2">
+          <label class="block text-xs font-semibold mb-1">Ganti Poster (opsional)</label>
+          <div id="editPosterFileWrap">
+            <span class="text-[11px] text-gray-500 dark:text-gray-400 block mb-1">Upload gambar baru</span>
+            <input type="file" id="editPosterFile" accept="image/*" onchange="previewEditPosterFile(event)" class="w-full text-xs text-gray-500 dark:text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-brand-accent file:text-white hover:file:bg-pink-700 cursor-pointer bg-brand-lightCard2 dark:bg-brand-card2 p-1.5 rounded border border-brand-lightLine dark:border-brand-line">
+          </div>
+          <div class="text-center text-xs text-gray-500 my-1">- ATAU -</div>
+          <input type="url" id="editPosterUrl" placeholder="https://... (link gambar poster baru)" class="w-full bg-brand-lightCard2 dark:bg-brand-card2 border border-brand-lightLine dark:border-brand-line rounded p-2 text-sm">
+          <div id="editPosterPreviewContainer" class="hidden mt-1 flex items-center gap-3 bg-brand-lightCard2 dark:bg-brand-card2 p-2 rounded border border-brand-lightLine dark:border-brand-line">
+            <img id="editPosterPreviewImg" src="" class="w-12 h-16 object-cover rounded">
+            <span class="text-xs text-green-500 dark:text-green-400 font-medium"><i class="ri-checkbox-circle-fill"></i> Poster baru siap gas!</span>
+          </div>
+        </div>
+        <button type="submit" class="w-full bg-brand-accent2 text-brand-bg hover:brightness-90 font-bold py-2 rounded text-sm mt-2">Simpan Perubahan</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= JAVASCRIPT LOGIC ================= -->
+  <script>
+    // ---------- STATE ----------
+    let movies = [];
+    let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+    let isDeveloper = sessionStorage.getItem('isDeveloper') === 'true';
+    let activeMovieId = null;
+    let editingMovieId = null;
+    let devLockOverride = null;
+
+    let dbApi = null;
+    let assetsApi = null;
+    let usingCloud = false;
+    let moviesUnsub = null;
+
+    let base64PosterImage = "";     // preview untuk Create (fallback / non-cloud)
+    let selectedPosterFile = null;  // File asli untuk di-upload ke assets (Create)
+    let base64EditPosterImage = ""; // preview untuk Edit
+    let selectedEditPosterFile = null;
+
+    const MONTH_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+    const TYPE_CONFIG = {
+      'Movie':        { hasEpisode: false, hasDuration: true,  hasDramaSub: false, isCustom: false },
+      'Series':       { hasEpisode: true,  hasDuration: false, hasDramaSub: false, isCustom: false },
+      'Sinetron':     { hasEpisode: true,  hasDuration: false, hasDramaSub: false, isCustom: false },
+      'Anime':        { hasEpisode: true,  hasDuration: false, hasDramaSub: false, isCustom: false },
+      'Donghua':      { hasEpisode: true,  hasDuration: false, hasDramaSub: false, isCustom: false },
+      'Drama':        { hasEpisode: true,  hasDuration: false, hasDramaSub: true,  isCustom: false },
+      'Cartoon':      { hasEpisode: true,  hasDuration: false, hasDramaSub: false, isCustom: false },
+      'Live Action':  { hasEpisode: true,  hasDuration: false, hasDramaSub: false, isCustom: false },
+      'Lainnya':      { hasEpisode: true,  hasDuration: false, hasDramaSub: false, isCustom: true }
+    };
+
+    let createRatingWidget = null;
+    let userRatingWidget = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      updateAuthUI();
+      updateTypeFields();
+      createRatingWidget = initStarWidget('createRatingStars', 'createRatingValueText');
+      userRatingWidget = initStarWidget('userRatingStars', 'userRatingValueText');
+      initApp();
+      setInterval(() => { renderHome(); updateRatingLockUI(); updateCreateLockUI(); }, 60000);
+    });
+
+    // ---------- 0. INIT: CLOUD (db+assets) DENGAN FALLBACK LOCALSTORAGE ----------
+    async function initApp() {
+      try {
+        if (window.claude && typeof window.claude.use === 'function') {
+          dbApi = await window.claude.use('db');
+        }
+      } catch (e) { dbApi = null; }
+
+      if (dbApi) {
+        usingCloud = true;
+        try { assetsApi = await window.claude.use('assets'); } catch (e) { assetsApi = null; }
+        subscribeMoviesCloud();
+      } else {
+        usingCloud = false;
+        movies = JSON.parse(localStorage.getItem('moviesData')) || [];
+        renderHome();
+      }
+      updateConnectionBadge();
+      updatePosterOptionVisibility();
+    }
+
+    function updateConnectionBadge() {
+      const badge = document.getElementById('connStatus');
+      const aboutInfo = document.getElementById('aboutConnInfo');
+      if (usingCloud) {
+        badge.textContent = '🟢 Tersambung';
+        badge.title = 'Karya & review kesimpan bareng, semua yang buka halaman ini lihat data yang sama.';
+        if (aboutInfo) aboutInfo.textContent = '🟢 Lagi kesambung ke penyimpanan bareng — karya & review yang kamu masukin bisa dilihat orang lain yang buka halaman ini juga.';
+      } else {
+        badge.textContent = '⚪ Mode Lokal';
+        badge.title = 'Data cuma kesimpan di browser ini aja (localStorage), belum ke penyimpanan bersama.';
+        if (aboutInfo) aboutInfo.textContent = '⚪ Lagi jalan di Mode Lokal — data cuma kesimpan di browser ini aja, belum kebagi ke orang lain.';
+      }
+    }
+
+    function updatePosterOptionVisibility() {
+      const showFileUpload = !usingCloud || !!assetsApi;
+      const fileWrap = document.getElementById('createPosterFileWrap');
+      const orDivider = document.getElementById('createPosterOrDivider');
+      if (fileWrap) fileWrap.classList.toggle('hidden', !showFileUpload);
+      if (orDivider) orDivider.classList.toggle('hidden', !showFileUpload);
+      const editFileWrap = document.getElementById('editPosterFileWrap');
+      if (editFileWrap) editFileWrap.classList.toggle('hidden', !showFileUpload);
+    }
+
+    function subscribeMoviesCloud() {
+      if (moviesUnsub) { moviesUnsub(); moviesUnsub = null; }
+      moviesUnsub = dbApi.collection('movies').orderBy('createdAt', 'desc').onSnapshot(
+        (snap) => {
+          movies = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
+          renderHome();
+          if (!document.getElementById('page-detail').classList.contains('hidden') && activeMovieId) {
+            const m = movies.find(x => x.id === activeMovieId);
+            if (m) { renderDetailContent(m); renderReviews(m.reviews || [], m.id); }
+          }
+          if (!document.getElementById('page-my-reviews').classList.contains('hidden')) renderMyReviews();
+          const overlayInput = document.getElementById('searchOverlayInput');
+          if (overlayInput && overlayInput.value) handleSearchOverlay(overlayInput.value);
+        },
+        (err) => {
+          console.error('db onSnapshot error', err);
+        }
+      );
+    }
+
+    function genId(prefix) {
+      return prefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+    }
+
+    async function persistMovieUpdate(movieId, patch) {
+      if (usingCloud) {
+        await dbApi.collection('movies').doc(movieId).update(patch);
+      } else {
+        const idx = movies.findIndex(m => m.id === movieId);
+        if (idx > -1) {
+          movies[idx] = { ...movies[idx], ...patch };
+          saveMoviesLocal();
+        }
+      }
+    }
+
+    async function createMovieRecord(movieData) {
+      if (usingCloud) {
+        const ref = await dbApi.collection('movies').add(movieData);
+        return ref.id;
+      } else {
+        const id = genId('m');
+        movies.unshift({ id, ...movieData });
+        saveMoviesLocal();
+        renderHome();
+        return id;
+      }
+    }
+
+    function saveMoviesLocal() {
+      localStorage.setItem('moviesData', JSON.stringify(movies));
+    }
+
+    // ---------- 1. NAVIGASI ----------
+    function navigateTo(pageId) {
+      closeSearchOverlay();
+      document.querySelectorAll('.page').forEach(page => page.classList.add('hidden'));
+      const target = document.getElementById(`page-${pageId}`);
+      if (target) target.classList.remove('hidden');
+      window.scrollTo(0, 0);
+      if (pageId === 'my-reviews') renderMyReviews();
+      if (pageId === 'home') renderHome();
+      if (pageId === 'settings') renderSettingsExtras();
+      if (pageId === 'create') { updateTypeFields(); updateCreateLockUI(); updatePosterOptionVisibility(); }
+    }
+
+    function handleCreateNav() {
+      if (requireLogin()) navigateTo('create');
+    }
+
+    // ---------- 2. AUTH & DEVELOPER ----------
+    function updateAuthUI() {
+      const authArea = document.getElementById('navAuthArea');
+      let html = '';
+      if (isDeveloper) {
+        html += `<span class="mr-2 text-[10px] font-display text-brand-accent2 border border-brand-accent2/50 rounded px-2 py-1 hidden sm:inline-block">DEV MODE</span>`;
+      }
+      if (currentUser) {
+        html += `
+          <button onclick="navigateTo('settings')" class="flex items-center gap-2 bg-brand-lightCard2 dark:bg-brand-card hover:brightness-95 dark:hover:bg-brand-card2 px-3 py-1.5 rounded-full text-sm border border-brand-lightLine dark:border-brand-line">
+            <i class="ri-user-3-line text-brand-accent"></i>
+            <span>${escapeHtml(currentUser.name)}</span>
+          </button>
+        `;
+      } else {
+        html += `
+          <button onclick="navigateTo('login')" class="bg-brand-accent hover:bg-pink-700 text-white px-4 py-1.5 rounded-md text-sm font-bold transition">
+            Login
+          </button>
+        `;
+      }
+      authArea.innerHTML = html;
+      renderSettingsExtras();
+    }
+
+    function renderSettingsExtras() {
+      const settingsName = document.getElementById('settingsProfileName');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const devPanel = document.getElementById('devToolsPanel');
+      if (settingsName) settingsName.innerText = currentUser ? `Nama Panggilan: ${currentUser.name}` : 'Nama Panggilan: - (belum login)';
+      if (logoutBtn) logoutBtn.classList.toggle('hidden', !currentUser);
+      if (devPanel) devPanel.classList.toggle('hidden', !isDeveloper);
+      updateConnectionBadge();
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      currentUser = {
+        name: document.getElementById('loginName').value,
+        genre: document.getElementById('loginGenre').value,
+        type: document.getElementById('loginType').value
+      };
+      localStorage.setItem('currentUser', JSON.stringify(currentUser));
+      updateAuthUI();
+      navigateTo('home');
+    }
+
+    function handleLogout() {
+      currentUser = null;
+      localStorage.removeItem('currentUser');
+      updateAuthUI();
+      navigateTo('home');
+    }
+
+    function requireLogin() {
+      if (currentUser || isDeveloper) return true;
+      alert('Login dulu yuk, biar bisa ngirim review atau nambahin karya!');
+      navigateTo('login');
+      return false;
+    }
+
+    function openDevModal() { document.getElementById('devModal').classList.remove('hidden'); }
+    function closeDevModal() { document.getElementById('devModal').classList.add('hidden'); }
+
+    function verifyDevCode() {
+      const code = document.getElementById('devCodeInput').value;
+      if (code === '99' || code === '20') {
+        isDeveloper = true;
+        sessionStorage.setItem('isDeveloper', 'true');
+        alert('Akses Developer diterima! Sekarang kamu bisa nambahin, ngedit, atau hapus konten.');
+        closeDevModal();
+        updateAuthUI();
+        navigateTo('create');
+      } else {
+        alert('Yah, kode developernya salah nih!');
+      }
+    }
+
+    function exitDevMode() {
+      isDeveloper = false;
+      devLockOverride = null;
+      sessionStorage.removeItem('isDeveloper');
+      updateAuthUI();
+      renderHome();
+      if (activeMovieId && !document.getElementById('page-detail').classList.contains('hidden')) {
+        const m = movies.find(x => x.id === activeMovieId);
+        if (m) { renderDetailContent(m); renderReviews(m.reviews || [], m.id); }
+      }
+      alert('Mode Developer dimatiin.');
+    }
+
+    function setDevLockOverride(val) {
+      devLockOverride = val;
+      renderHome();
+      updateRatingLockUI();
+      updateCreateLockUI();
+    }
+
+    // ---------- 3. UPLOAD POSTER (CREATE) ----------
+    function previewPosterFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      selectedPosterFile = file;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        base64PosterImage = e.target.result;
+        document.getElementById('posterPreviewImg').src = base64PosterImage;
+        document.getElementById('posterPreviewContainer').classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function previewEditPosterFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      selectedEditPosterFile = file;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        base64EditPosterImage = e.target.result;
+        document.getElementById('editPosterPreviewImg').src = base64EditPosterImage;
+        document.getElementById('editPosterPreviewContainer').classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // ---------- 4. FIELD DINAMIS SESUAI JENIS KARYA ----------
+    function updateTypeFields() {
+      const typeSelect = document.getElementById('createType');
+      if (!typeSelect) return;
+      const type = typeSelect.value;
+      const cfg = TYPE_CONFIG[type] || {};
+      document.getElementById('episodeStatusWrap').classList.toggle('hidden', !cfg.hasEpisode);
+      document.getElementById('durationWrap').classList.toggle('hidden', !cfg.hasDuration);
+      document.getElementById('dramaSubWrap').classList.toggle('hidden', !cfg.hasDramaSub);
+      document.getElementById('customTypeWrap').classList.toggle('hidden', !cfg.isCustom);
+    }
+
+    // ---------- 5. WIDGET RATING BINTANG ----------
+    function initStarWidget(containerId, labelId) {
+      let value = 0;
+      const container = document.getElementById(containerId);
+      const label = document.getElementById(labelId);
+
+      function render() {
+        container.innerHTML = '';
+        for (let i = 1; i <= 5; i++) {
+          const isFull = value >= i;
+          const isHalf = !isFull && value >= (i - 0.5);
+          const icon = document.createElement('i');
+          icon.className = 'star-icon text-2xl cursor-pointer mr-1 text-amber-500 dark:text-brand-accent3 ' +
+            (isFull ? 'ri-star-fill' : isHalf ? 'ri-star-half-fill' : 'ri-star-line');
+          icon.tabIndex = 0;
+          icon.setAttribute('role', 'button');
+          icon.setAttribute('aria-label', `Kasih rating ${i} bintang`);
+          icon.onclick = () => {
+            const halfVal = i - 0.5;
+            value = (value === halfVal) ? i : halfVal;
+            render();
+          };
+          icon.onkeydown = (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); icon.onclick(); } };
+          container.appendChild(icon);
+        }
+        if (label) label.innerText = `${value}/5`;
+      }
+
+      render();
+      return {
+        getValue: () => value,
+        reset: () => { value = 0; render(); }
+      };
+    }
+
+    // ---------- 6. PENGUNCIAN RATING & PERIODE RANKING ----------
+    function getLastDateOfMonth(d) { return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); }
+
+    function isFreezeWindow(scope) {
+      if (devLockOverride === true) return true;
+      if (devLockOverride === false) return false;
+      const now = new Date();
+      if (scope === 'month') {
+        return now.getDate() === getLastDateOfMonth(now) && now.getHours() < 18;
+      }
+      return now.getMonth() === 11 && now.getDate() === 31 && now.getHours() < 18;
+    }
+
+    function isRatingLocked() { return isFreezeWindow('month') || isFreezeWindow('year'); }
+
+    function getMonthKey(d) { return `${d.getFullYear()}-${d.getMonth()}`; }
+    function getYearKey(d) { return `${d.getFullYear()}`; }
+
+    function computeRanking(scope) {
+      const now = new Date();
+      const keyNow = scope === 'month' ? getMonthKey(now) : getYearKey(now);
+      const scored = [];
+      movies.forEach(m => {
+        const relevant = (m.reviews || []).filter(r =>
+          r.rating != null && r.timestamp &&
+          (scope === 'month' ? getMonthKey(new Date(r.timestamp)) === keyNow : getYearKey(new Date(r.timestamp)) === keyNow)
+        );
+        if (relevant.length > 0) {
+          const avg = relevant.reduce((s, r) => s + Number(r.rating), 0) / relevant.length;
+          scored.push({ movie: m, avg, count: relevant.length });
+        }
+      });
+      scored.sort((a, b) => b.avg - a.avg || b.count - a.count);
+      return scored.slice(0, 10);
+    }
+
+    function getOverallAvg(movie) {
+      const rated = (movie.reviews || []).filter(r => r.rating != null);
+      if (!rated.length) return movie.rating != null ? Number(movie.rating).toFixed(1) : '-';
+      return (rated.reduce((s, r) => s + Number(r.rating), 0) / rated.length).toFixed(1);
+    }
+
+    function periodInfoText(scope) {
+      const now = new Date();
+      if (scope === 'month') {
+        const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        return `Dikunci tgl ${getLastDateOfMonth(now)} pukul 00:00–18:00 • Update 1 ${MONTH_NAMES[nextMonthDate.getMonth()]}`;
+      }
+      return `Dikunci 31 Desember pukul 00:00–18:00 • Update 1 Januari`;
+    }
+
+    // ---------- 7. RENDER HOME & RANKING ----------
+    function renderHome() {
+      renderRankingSection('month');
+      renderRankingSection('year');
+      updateHero();
+    }
+
+    function typeLabel(movie) {
+      if (movie.type === 'Drama' && movie.dramaSub) return `Drama (${movie.dramaSub})`;
+      return movie.type;
+    }
+
+    function renderRankingSection(scope) {
+      const listEl = document.getElementById(scope === 'month' ? 'top10List' : 'top10YearList');
+      const bannerEl = document.getElementById(scope === 'month' ? 'monthLockBanner' : 'yearLockBanner');
+      const infoEl = document.getElementById(scope === 'month' ? 'monthPeriodInfo' : 'yearPeriodInfo');
+      if (infoEl) infoEl.textContent = periodInfoText(scope);
+
+      const locked = isFreezeWindow(scope);
+      if (bannerEl) {
+        if (locked) {
+          bannerEl.classList.remove('hidden');
+          bannerEl.textContent = scope === 'month'
+            ? '🔒 Rating bulan ini lagi dikunci sampai jam 18.00 buat finalisasi ranking. Tenang, komentar masih bisa kok!'
+            : '🔒 Rating tahun ini lagi dikunci sampai jam 18.00 buat finalisasi ranking. Tenang, komentar masih bisa kok!';
+        } else {
+          bannerEl.classList.add('hidden');
+        }
+      }
+
+      listEl.innerHTML = '';
+      if (movies.length === 0) {
+        listEl.innerHTML = `<p class="text-gray-500 text-sm italic py-4">Belum ada karya sama sekali. Yuk jadi yang pertama nambahin lewat tombol (+)!</p>`;
+        return;
+      }
+
+      const ranking = computeRanking(scope);
+      if (ranking.length === 0) {
+        listEl.innerHTML = `<p class="text-gray-500 text-sm italic py-4">Belum ada yang ngasih rating buat periode ini.</p>`;
+        return;
+      }
+
+      ranking.forEach((entry, index) => {
+        const item = entry.movie;
+        const card = document.createElement('div');
+        const isTop = index === 0;
+        card.className = "flex-shrink-0 w-36 md:w-44 bg-brand-lightCard dark:bg-brand-card rounded-lg overflow-hidden border cursor-pointer transition-transform duration-300 hover:scale-105 relative group " +
+          (isTop ? "border-brand-accent3 shadow-[0_0_16px_rgba(255,207,77,0.45)]" : "border-brand-lightLine dark:border-brand-line");
+        card.onclick = () => openDetail(item.id);
+        card.innerHTML = `
+          <div class="absolute top-2 left-2 bg-black/70 text-brand-accent3 font-display font-black text-base px-2 py-0.5 rounded">
+            #${index + 1}
+          </div>
+          <img src="${item.poster}" alt="${escapeHtml(item.title)}" class="w-full h-52 md:h-64 object-cover">
+          <div class="p-3">
+            <h4 class="font-bold text-sm text-gray-900 dark:text-white truncate">${escapeHtml(item.title)}</h4>
+            <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <span><i class="ri-star-fill text-amber-500 dark:text-brand-accent3"></i> ${entry.avg.toFixed(1)}/5</span>
+              <span>${entry.count} rating</span>
+            </div>
+          </div>
+        `;
+        listEl.appendChild(card);
+      });
+    }
+
+    function updateHero() {
+      if (movies.length === 0) return;
+      const yearRanking = computeRanking('year');
+      let hero, badgeText;
+      if (yearRanking.length > 0) {
+        hero = yearRanking[0].movie;
+        badgeText = "🏆 Top 10 Tahun Ini — Peringkat #1";
+      } else {
+        hero = movies[0];
+        badgeText = "✨ Karya Terbaru";
+      }
+      document.getElementById('heroSection').style.backgroundImage =
+        `linear-gradient(to top, rgba(10,6,19,1) 10%, rgba(10,6,19,0.3) 50%, rgba(10,6,19,0.8) 100%), url('${hero.poster}')`;
+      document.getElementById('heroTitle').innerText = hero.title;
+      document.getElementById('heroDesc').innerText = hero.synopsis;
+      document.getElementById('heroBadge').innerText = badgeText;
+      document.getElementById('heroBtn').onclick = () => openDetail(hero.id);
+    }
+
+    // ---------- 8. DETAIL REVIEW PAGE ----------
+    function openDetail(id) {
+      activeMovieId = id;
+      const movie = movies.find(m => m.id === id);
+      if (!movie) return;
+      renderDetailContent(movie);
+      renderReviews(movie.reviews || [], movie.id);
+      if (userRatingWidget) userRatingWidget.reset();
+      updateRatingLockUI();
+      navigateTo('detail');
+    }
+
+    function renderDetailContent(movie) {
+      const infoBadges = [];
+      infoBadges.push(`<span class="bg-brand-lightCard2 dark:bg-brand-card px-3 py-1 rounded border border-brand-lightLine dark:border-brand-line"><i class="ri-star-fill text-amber-500 dark:text-brand-accent3"></i> Rating: ${getOverallAvg(movie)}/5</span>`);
+      infoBadges.push(`<span class="bg-brand-lightCard2 dark:bg-brand-card px-3 py-1 rounded border border-brand-lightLine dark:border-brand-line">Jenis: ${escapeHtml(typeLabel(movie))}</span>`);
+      if (movie.duration) {
+        infoBadges.push(`<span class="bg-brand-lightCard2 dark:bg-brand-card px-3 py-1 rounded border border-brand-lightLine dark:border-brand-line">Durasi: ${escapeHtml(movie.duration)}</span>`);
+      } else {
+        infoBadges.push(`<span class="bg-brand-lightCard2 dark:bg-brand-card px-3 py-1 rounded border border-brand-lightLine dark:border-brand-line">Status: ${movie.status === 'Complete' ? 'Udah Tamat' : 'Masih Tayang'}</span>`);
+        infoBadges.push(`<span class="bg-brand-lightCard2 dark:bg-brand-card px-3 py-1 rounded border border-brand-lightLine dark:border-brand-line">Episode: ${escapeHtml(movie.episodes || '-')}</span>`);
+      }
+      if (movie.editedByDeveloper) {
+        infoBadges.push(`<span class="bg-brand-accent2/20 text-cyan-700 dark:text-brand-accent2 px-3 py-1 rounded border border-brand-accent2/40 text-xs flex items-center gap-1"><i class="ri-shield-check-line"></i> Diedit Developer</span>`);
+      }
+
+      const trailerBtn = movie.trailer
+        ? `<a href="${escapeHtml(movie.trailer)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 mt-3 bg-brand-accent2 text-brand-bg font-bold text-sm px-4 py-2 rounded-lg hover:brightness-90 transition"><i class="ri-play-circle-fill text-lg"></i> Tonton Trailer / Cuplikan</a>`
+        : `<p class="text-xs text-gray-500 dark:text-gray-500 mt-3 italic">Belum ada link trailer buat karya ini.</p>`;
+
+      const devEditBtn = isDeveloper
+        ? `<button onclick="openEditMovieModal('${movie.id}')" class="inline-flex items-center gap-1 mt-3 ml-2 bg-brand-card2 border border-brand-accent2/50 text-brand-accent2 text-xs font-bold px-3 py-2 rounded-lg hover:bg-brand-accent2/10 transition"><i class="ri-edit-2-line"></i> Edit Karya</button>`
+        : '';
+
+      const container = document.getElementById('detailContent');
+      container.innerHTML = `
+        <div class="flex flex-col md:flex-row gap-6">
+          <img src="${movie.poster}" class="w-full md:w-64 h-80 object-cover rounded-xl shadow-lg border border-brand-lightLine dark:border-brand-line">
+          <div class="space-y-3">
+            <h2 class="font-display text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white">${escapeHtml(movie.title)}</h2>
+            <div class="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-300">
+              ${infoBadges.join('')}
+            </div>
+            <div>
+              <h4 class="font-bold text-sm uppercase text-gray-500 dark:text-gray-400">Sinopsis</h4>
+              <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mt-1">${escapeHtml(movie.synopsis)}</p>
+            </div>
+            <div class="flex flex-wrap">${trailerBtn}${devEditBtn}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderReviews(reviews, movieId) {
+      const list = document.getElementById('reviewsList');
+      list.innerHTML = '';
+      if (reviews.length === 0) {
+        list.innerHTML = `<p class="text-xs text-gray-500">Sepi banget, belum ada yang review. Jadi yang pertama yuk!</p>`;
+        return;
+      }
+      reviews.forEach(r => {
+        const item = document.createElement('div');
+        item.className = "bg-brand-lightCard dark:bg-brand-card/60 p-4 rounded-lg border border-brand-lightLine dark:border-brand-line space-y-1";
+        const ratingText = r.rating != null ? `<span class="text-amber-600 dark:text-brand-accent3 font-bold"><i class="ri-star-fill"></i> ${r.rating}/5</span>` : `<span class="text-gray-500 text-[11px] italic">Tanpa rating (periode terkunci)</span>`;
+        const deleteBtn = isDeveloper && r.id
+          ? `<button onclick="deleteReview('${movieId}','${r.id}')" title="Hapus komentar" class="text-gray-400 hover:text-brand-accent text-xs"><i class="ri-delete-bin-6-line"></i></button>`
+          : '';
+        item.innerHTML = `
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-bold text-brand-accent">${escapeHtml(r.user)}</span>
+            <div class="flex items-center gap-2">
+              ${ratingText}
+              ${deleteBtn}
+            </div>
+          </div>
+          <p class="text-xs text-gray-500 dark:text-gray-400 font-semibold">Rekomendasi: ${r.recommend}</p>
+          <p class="text-sm text-gray-700 dark:text-gray-200 mt-1">${escapeHtml(r.comment)}</p>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    async function deleteReview(movieId, reviewId) {
+      if (!isDeveloper) return;
+      if (!confirm('Yakin mau hapus komentar ini? Gak bisa dibalikin lho.')) return;
+      const movie = movies.find(m => m.id === movieId);
+      if (!movie) return;
+      const newReviews = (movie.reviews || []).filter(r => r.id !== reviewId);
+      try {
+        await persistMovieUpdate(movieId, { reviews: newReviews });
+        movie.reviews = newReviews;
+        renderReviews(newReviews, movieId);
+        renderHome();
+      } catch (e) {
+        alert('Gagal hapus komentar, coba lagi ya.');
+      }
+    }
+
+    function updateRatingLockUI() {
+      const wrap = document.getElementById('userRatingWrap');
+      const note = document.getElementById('ratingLockNote');
+      if (!wrap) return;
+      const locked = isRatingLocked();
+      wrap.classList.toggle('opacity-40', locked);
+      wrap.classList.toggle('pointer-events-none', locked);
+      if (note) note.classList.toggle('hidden', !locked);
+    }
+
+    function updateCreateLockUI() {
+      const wrap = document.getElementById('createRatingWrap');
+      const note = document.getElementById('createLockNote');
+      if (!wrap) return;
+      const locked = isRatingLocked();
+      wrap.classList.toggle('opacity-40', locked);
+      wrap.classList.toggle('pointer-events-none', locked);
+      if (note) note.classList.toggle('hidden', !locked);
+    }
+
+    async function submitReview(e) {
+      e.preventDefault();
+      if (!requireLogin()) return;
+      const movie = movies.find(m => m.id === activeMovieId);
+      if (!movie) return;
+
+      const locked = isRatingLocked();
+      const ratingVal = userRatingWidget ? userRatingWidget.getValue() : 0;
+      if (!locked && ratingVal <= 0) {
+        alert('Kasih rating dulu ya, klik bintangnya!');
+        return;
+      }
+
+      const newReview = {
+        id: genId('r'),
+        user: currentUser ? currentUser.name : "Developer",
+        rating: locked ? null : ratingVal,
+        recommend: document.getElementById('userRecommend').value,
+        comment: document.getElementById('userComment').value,
+        timestamp: Date.now()
+      };
+
+      const newReviews = [newReview, ...(movie.reviews || [])];
+      const submitBtn = e.target.querySelector('button[type=submit]');
+      if (submitBtn) submitBtn.disabled = true;
+      try {
+        await persistMovieUpdate(movie.id, { reviews: newReviews });
+        movie.reviews = newReviews;
+        renderReviews(newReviews, movie.id);
+        renderHome();
+        e.target.reset();
+        if (userRatingWidget) userRatingWidget.reset();
+        updateRatingLockUI();
+      } catch (err) {
+        alert('Gagal ngirim review, coba lagi ya.');
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    }
+
+    // ---------- 9. TAMBAH KARYA BARU ----------
+    async function handleCreateFirst(e) {
+      e.preventDefault();
+      if (!requireLogin()) return;
+
+      const locked = isRatingLocked();
+      const ratingVal = createRatingWidget ? createRatingWidget.getValue() : 0;
+      if (!locked && ratingVal <= 0) {
+        alert('Kasih rating awal dulu ya, klik bintangnya!');
+        return;
+      }
+
+      const type = document.getElementById('createType').value;
+      const cfg = TYPE_CONFIG[type] || {};
+      let finalType = type;
+      if (cfg.isCustom) {
+        const customVal = document.getElementById('createCustomType').value.trim();
+        if (!customVal) { alert('Ketik dulu jenis karyanya ya!'); return; }
+        finalType = customVal;
+      }
+
+      const submitBtn = document.getElementById('createSubmitBtn');
+      submitBtn.disabled = true;
+      submitBtn.innerText = 'Lagi ngeproses...';
+
+      try {
+        let finalPoster = 'https://via.placeholder.com/300x450?text=No+Poster';
+        const posterUrlInput = document.getElementById('createPosterUrl').value.trim();
+        if (usingCloud && assetsApi && selectedPosterFile) {
+          const res = await assetsApi.upload(selectedPosterFile);
+          finalPoster = res.url;
+        } else if (posterUrlInput) {
+          finalPoster = posterUrlInput;
+        } else if (base64PosterImage) {
+          finalPoster = base64PosterImage;
+        }
+
+        const newMovie = {
+          title: document.getElementById('createTitle').value,
+          type: finalType,
+          dramaSub: cfg.hasDramaSub ? document.getElementById('createDramaSub').value : null,
+          status: cfg.hasEpisode ? document.getElementById('createStatus').value : null,
+          episodes: cfg.hasEpisode ? (document.getElementById('createEpisodes').value || '1 Episode') : null,
+          duration: cfg.hasDuration ? (document.getElementById('createDuration').value || '-') : null,
+          synopsis: document.getElementById('createSynopsis').value,
+          poster: finalPoster,
+          trailer: document.getElementById('createTrailerUrl').value.trim() || null,
+          rating: locked ? null : ratingVal,
+          reviews: [],
+          createdBy: currentUser ? currentUser.name : "Developer",
+          createdAt: Date.now(),
+          editedByDeveloper: false
+        };
+
+        await createMovieRecord(newMovie);
+        alert('Mantap! Karya berhasil ditambahin 🎉');
+
+        e.target.reset();
+        if (createRatingWidget) createRatingWidget.reset();
+        base64PosterImage = "";
+        selectedPosterFile = null;
+        document.getElementById('posterPreviewContainer').classList.add('hidden');
+        updateTypeFields();
+
+        renderHome();
+        navigateTo('home');
+      } catch (err) {
+        alert('Gagal nambahin karya, coba lagi ya.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'Gas Posting!';
+      }
+    }
+
+    // ---------- 9b. EDIT KARYA (DEVELOPER) ----------
+    function openEditMovieModal(movieId) {
+      if (!isDeveloper) return;
+      const movie = movies.find(m => m.id === movieId);
+      if (!movie) return;
+      editingMovieId = movieId;
+      document.getElementById('editTitle').value = movie.title || '';
+      document.getElementById('editSynopsis').value = movie.synopsis || '';
+      document.getElementById('editTrailerUrl').value = movie.trailer || '';
+      document.getElementById('editPosterUrl').value = '';
+      base64EditPosterImage = "";
+      selectedEditPosterFile = null;
+      document.getElementById('editPosterPreviewContainer').classList.add('hidden');
+      document.getElementById('editMovieModal').classList.remove('hidden');
+      updatePosterOptionVisibility();
+    }
+
+    function closeEditMovieModal() {
+      document.getElementById('editMovieModal').classList.add('hidden');
+      editingMovieId = null;
+    }
+
+    async function submitEditMovie(e) {
+      e.preventDefault();
+      if (!isDeveloper || !editingMovieId) return;
+      const movie = movies.find(m => m.id === editingMovieId);
+      if (!movie) return;
+
+      const patch = {
+        title: document.getElementById('editTitle').value,
+        synopsis: document.getElementById('editSynopsis').value,
+        trailer: document.getElementById('editTrailerUrl').value.trim() || null,
+        editedByDeveloper: true
+      };
+
+      const posterUrlInput = document.getElementById('editPosterUrl').value.trim();
+      try {
+        if (usingCloud && assetsApi && selectedEditPosterFile) {
+          const res = await assetsApi.upload(selectedEditPosterFile);
+          patch.poster = res.url;
+        } else if (posterUrlInput) {
+          patch.poster = posterUrlInput;
+        } else if (base64EditPosterImage) {
+          patch.poster = base64EditPosterImage;
+        }
+
+        await persistMovieUpdate(editingMovieId, patch);
+        Object.assign(movie, patch);
+        closeEditMovieModal();
+        renderDetailContent(movie);
+        renderHome();
+        alert('Karya berhasil diupdate!');
+      } catch (err) {
+        alert('Gagal update karya, coba lagi ya.');
+      }
+    }
+
+    // ---------- 10. MY REVIEWS ----------
+    function renderMyReviews() {
+      const container = document.getElementById('myReviewsList');
+      if (!currentUser && !isDeveloper) {
+        container.innerHTML = `
+          <div class="bg-brand-lightCard dark:bg-brand-card/50 rounded-lg p-8 text-center border border-brand-lightLine dark:border-brand-line">
+            <i class="ri-lock-line text-4xl text-gray-400 dark:text-gray-500 mb-2 block"></i>
+            <p class="text-lg font-medium text-gray-500 dark:text-gray-400">Login dulu buat liat review kamu ya!</p>
+          </div>`;
+        return;
+      }
+      const nameKey = currentUser ? currentUser.name : "Developer";
+      const mine = [];
+      movies.forEach(m => (m.reviews || []).forEach(r => {
+        if (r.user === nameKey) mine.push({ ...r, movieTitle: m.title, movieId: m.id, poster: m.poster });
+      }));
+
+      if (mine.length === 0) {
+        container.innerHTML = `
+          <div class="bg-brand-lightCard dark:bg-brand-card/50 rounded-lg p-8 text-center border border-brand-lightLine dark:border-brand-line">
+            <i class="ri-edit-box-line text-4xl text-gray-400 dark:text-gray-500 mb-2 block"></i>
+            <p class="text-lg font-medium text-gray-500 dark:text-gray-400">Belum nulis review sama sekali, gas mulai!</p>
+          </div>`;
+        return;
+      }
+
+      mine.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      container.innerHTML = '';
+      mine.forEach(r => {
+        const el = document.createElement('div');
+        el.className = "bg-brand-lightCard dark:bg-brand-card p-4 rounded-lg border border-brand-lightLine dark:border-brand-line flex gap-4 cursor-pointer hover:border-brand-accent2";
+        el.onclick = () => openDetail(r.movieId);
+        const ratingText = r.rating != null ? `<i class="ri-star-fill text-amber-500 dark:text-brand-accent3"></i> ${r.rating}/5` : `<span class="italic text-gray-500">Tanpa rating</span>`;
+        el.innerHTML = `
+          <img src="${r.poster}" class="w-14 h-20 object-cover rounded flex-shrink-0">
+          <div class="min-w-0">
+            <h4 class="font-bold text-sm truncate">${escapeHtml(r.movieTitle)}</h4>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">${ratingText} • ${r.recommend}</p>
+            <p class="text-sm text-gray-700 dark:text-gray-200 mt-1 line-clamp-2">${escapeHtml(r.comment)}</p>
+          </div>
+        `;
+        container.appendChild(el);
+      });
+    }
+
+    // ---------- 11. PENCARIAN (overlay full-screen ala YouTube) ----------
+    function openSearchOverlay() {
+      const overlay = document.getElementById('searchOverlay');
+      overlay.classList.remove('hidden');
+      overlay.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+      const input = document.getElementById('searchOverlayInput');
+      input.value = '';
+      handleSearchOverlay('');
+      setTimeout(() => input.focus(), 50);
+    }
+
+    function closeSearchOverlay() {
+      const overlay = document.getElementById('searchOverlay');
+      overlay.classList.add('hidden');
+      overlay.classList.remove('flex');
+      document.body.style.overflow = '';
+    }
+
+    function clearSearchOverlay() {
+      const input = document.getElementById('searchOverlayInput');
+      input.value = '';
+      handleSearchOverlay('');
+      input.focus();
+    }
+
+    document.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape') closeSearchOverlay();
+    });
+
+    function handleSearchOverlay(query) {
+      const resultsEl = document.getElementById('searchOverlayResults');
+      resultsEl.innerHTML = '';
+
+      if (!query.trim()) {
+        resultsEl.innerHTML = `<p class="text-gray-500 text-sm italic">Ketik judul karyanya di atas ya!</p>`;
+        return;
+      }
+
+      const filtered = movies.filter(m => (m.title || '').toLowerCase().includes(query.toLowerCase()));
+      if (filtered.length === 0) {
+        resultsEl.innerHTML = `<p class="text-gray-500 text-sm italic">Yah, gak ketemu tuh judulnya 😅</p>`;
+        return;
+      }
+
+      const grid = document.createElement('div');
+      grid.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4";
+      filtered.forEach(item => {
+        const card = document.createElement('div');
+        card.className = "bg-brand-lightCard dark:bg-brand-card rounded p-2 border border-brand-lightLine dark:border-brand-line cursor-pointer hover:border-brand-accent2";
+        card.onclick = () => openDetail(item.id);
+        card.innerHTML = `
+          <img src="${item.poster}" class="w-full h-36 object-cover rounded mb-2">
+          <h5 class="text-xs font-bold truncate">${escapeHtml(item.title)}</h5>
+        `;
+        grid.appendChild(card);
+      });
+      resultsEl.appendChild(grid);
+    }
+
+    // ---------- 12. TEMA ----------
+    function setTheme(mode) {
+      const html = document.documentElement;
+      if (mode === 'dark') {
+        html.classList.add('dark');
+      } else if (mode === 'light') {
+        html.classList.remove('dark');
+      } else {
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          html.classList.add('dark');
+        } else {
+          html.classList.remove('dark');
+        }
+      }
+    }
+
+    // UTIL
+    function escapeHtml(str) {
+      if (str === undefined || str === null) return '';
+      return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
+    }
+  </script>
+</body>
+</html>
